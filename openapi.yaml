@@ -1,0 +1,306 @@
+openapi: 3.0.3
+info:
+  title: PM Buddy API
+  description: API for the PM Buddy project management application.
+  version: 1.0.0
+servers:
+  - url: https://api.pmbuddy.dev/v1
+    description: Production Server
+
+paths:
+  /projects/{projectId}/issues:
+    get:
+      summary: List all issues in a project
+      tags:
+        - Issues
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: 'p1'
+      responses:
+        '200':
+          description: A list of issues.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Issue'
+    post:
+      summary: Create a new issue
+      tags:
+        - Issues
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: 'p1'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewIssue'
+      responses:
+        '201':
+          description: Issue created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Issue'
+        '400':
+          description: Invalid input.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /projects/{projectId}/issues/{issueKey}:
+    get:
+      summary: Get an issue by its key
+      tags:
+        - Issues
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: 'p1'
+        - name: issueKey
+          in: path
+          required: true
+          schema:
+            type: string
+          example: 'PMB-1'
+      responses:
+        '200':
+          description: The requested issue.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Issue'
+        '404':
+          description: Issue not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    patch:
+      summary: Update an issue
+      tags:
+        - Issues
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: 'p1'
+        - name: issueKey
+          in: path
+          required: true
+          schema:
+            type: string
+          example: 'PMB-1'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                summary:
+                  type: string
+                status:
+                  type: string
+                assigneeIds:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Issue updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Issue'
+
+  /projects/{projectId}/sprints:
+    post:
+      summary: Create a new sprint
+      tags:
+        - Sprints
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                goal:
+                  type: string
+      responses:
+        '201':
+          description: Sprint created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sprint'
+
+  /projects/{projectId}/sprints/{sprintId}/start:
+    post:
+      summary: Start a sprint
+      tags:
+        - Sprints
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: sprintId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                startDate:
+                  type: string
+                  format: date
+                endDate:
+                  type: string
+                  format: date
+      responses:
+        '200':
+          description: Sprint started.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sprint'
+
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 'u1'
+        name:
+          type: string
+          example: 'Alex Reid'
+        email:
+          type: string
+          format: email
+        avatarUrl:
+          type: string
+          format: uri
+
+    Issue:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 'i1'
+        key:
+          type: string
+          example: 'PMB-1'
+        summary:
+          type: string
+          example: 'Set up project structure and boilerplate'
+        type:
+          type: string
+          enum: [Story, Task, Bug]
+        priority:
+          type: string
+          enum: [Highest, High, Medium, Low, Lowest]
+        status:
+          type: string
+          example: 'Done'
+        assignees:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        reporterId:
+          type: string
+        storyPoints:
+          type: integer
+          nullable: true
+        rank:
+          type: string
+        sprintId:
+          type: string
+          nullable: true
+        versionId:
+          type: string
+          nullable: true
+    
+    NewIssue:
+      type: object
+      required:
+        - summary
+        - type
+      properties:
+        summary:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+          enum: [Story, Task, Bug]
+        priority:
+          type: string
+          enum: [Highest, High, Medium, Low, Lowest]
+        assigneeIds:
+          type: array
+          items:
+            type: string
+        storyPoints:
+          type: integer
+          nullable: true
+
+    Sprint:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        goal:
+          type: string
+        status:
+          type: string
+          enum: [planned, active, completed]
+        issueIds:
+          type: array
+          items:
+            type: string
+    
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+      example:
+        code: 404
+        message: 'Resource not found'
